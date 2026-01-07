@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}{{ rubric.name }} :: Доска объявлений{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>📂 {{ rubric.name }}</h1>
+    <span class="badge bg-primary fs-6">Всего: {{ bbs.paginator.count }}</span>
+</div>
+
+{% if bbs %}
+    <div class="row">
+        {% for bb in bbs %}
+        <div class="col-md-6 mb-4">
+            <div class="card ad-card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">
+                        <a href="{% url 'bboard:detail' bb.pk %}" class="text-decoration-none text-dark">
+                            {{ bb.title }}
+                        </a>
+                    </h5>
+                    <p class="card-text flex-grow-1">{{ bb.content|truncatewords:20 }}</p>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <strong class="text-success">{{ bb.price|default:"0"|intcomma }} ₽</strong>
+                        <small class="text-muted">
+                            📅 {{ bb.published|date:"d.m.Y H:i" }}
+                        </small>
+                    </div>
+                    <small class="text-muted">👤 {{ bb.author.username }}</small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Пагинация -->
+    {% if bbs.has_other_pages %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if bbs.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ bbs.previous_page_number }}">‹ Назад</a>
+                </li>
+            {% endif %}
+
+            {% for num in bbs.paginator.page_range %}
+                {% if bbs.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > bbs.number|add:'-3' and num < bbs.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if bbs.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ bbs.next_page_number }}">Вперед ›</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+{% else %}
+    <div class="alert alert-info text-center">
+        <h4>😔 В рубрике "{{ rubric.name }}" пока нет объявлений</h4>
+        <p class="mb-3">Будьте первым, кто разместит объявление в этой рубрике!</p>
+        {% if user.is_authenticated %}
+            <a href="{% url 'bboard:add_bb' %}" class="btn btn-primary">➕ Добавить объявление</a>
+        {% else %}
+            <a href="{% url 'admin:login' %}" class="btn btn-primary">🔑 Войти для добавления</a>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}

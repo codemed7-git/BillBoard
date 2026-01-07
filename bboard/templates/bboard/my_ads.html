@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Мои объявления :: Доска объявлений{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>📰 Мои объявления</h1>
+    <a href="{% url 'bboard:add_bb' %}" class="btn btn-success">➕ Добавить новое</a>
+</div>
+
+{% if bbs %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Название</th>
+                    <th>Рубрика</th>
+                    <th>Цена</th>
+                    <th>Дата</th>
+                    <th>Статус</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bb in bbs %}
+                <tr>
+                    <td>
+                        <a href="{% url 'bboard:detail' bb.pk %}" class="text-decoration-none">
+                            {{ bb.title }}
+                        </a>
+                    </td>
+                    <td>{{ bb.rubric.name }}</td>
+                    <td class="text-success"><strong>{{ bb.price|default:"0"|intcomma }} ₽</strong></td>
+                    <td>{{ bb.published|date:"d.m.Y" }}</td>
+                    <td>
+                        {% if bb.is_active %}
+                            <span class="badge bg-success">Активно</span>
+                        {% else %}
+                            <span class="badge bg-warning">Неактивно</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="#" class="btn btn-warning btn-sm">✏️</a>
+                        <a href="#" class="btn btn-danger btn-sm">🗑️</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="alert alert-info text-center">
+        <h4>📭 У вас пока нет объявлений</h4>
+        <p class="mb-3">Создайте своё первое объявление!</p>
+        <a href="{% url 'bboard:add_bb' %}" class="btn btn-primary">➕ Добавить объявление</a>
+    </div>
+{% endif %}
+{% endblock %}

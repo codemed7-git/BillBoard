@@ -26,7 +26,7 @@ Pet проект Django для размещения и просмотра объ
 
 - **Python 3.8+**
 - **Django 4.2.25**
-- **SQLite** (база данных)
+- **PostgreSQL** (база данных)
 - **Bootstrap 5** (для стилизации интерфейса, через CDN)
 
 ## Установка и запуск
@@ -35,6 +35,7 @@ Pet проект Django для размещения и просмотра объ
 
 - Python 3.8+
 - pip
+- PostgreSQL 12+
 
 ### Шаги установки
 
@@ -63,30 +64,119 @@ source venv/bin/activate
 
 4. Установите зависимости:
 ```bash
-pip install Django==4.2.25
+pip install -r requirements.txt
 ```
 
-5. Примените миграции:
+5. Создайте базу данных PostgreSQL (пример для `psql`):
+```bash
+createdb billboard_db
+```
+Или в `psql`: `CREATE DATABASE billboard_db;`
+
+6. Скопируйте файл переменных окружения и при необходимости измените значения:
+```bash
+copy .env.example .env
+```
+На Linux/Mac: `cp .env.example .env`
+
+7. Примените миграции:
 ```bash
 python manage.py migrate
 ```
 
-6. Создайте суперпользователя (опционально):
+8. Создайте суперпользователя (опционально):
 ```bash
 python manage.py createsuperuser
 ```
 
-7. Загрузите начальные данные (рубрики):
+9. Загрузите начальные данные (рубрики):
 ```bash
 python manage.py create_initial_data
 ```
 
-8. Запустите сервер разработки:
+10. Запустите сервер разработки:
 ```bash
 python manage.py runserver
 ```
 
-9. Откройте браузер и перейдите по адресу: `http://127.0.0.1:8000/bboard/`
+11. Откройте браузер и перейдите по адресу: `http://127.0.0.1:8000/bboard/`
+
+## Развёртывание на сервере (Docker)
+
+При каждом запуске контейнера `web` автоматически:
+
+1. Ожидает готовность PostgreSQL  
+2. Выполняет `python manage.py migrate --noinput`  
+3. Собирает статику (`collectstatic`)  
+4. При `LOAD_INITIAL_DATA=true` загружает рубрики (`create_initial_data`)  
+5. Запускает приложение через Gunicorn  
+
+### Быстрый старт
+
+```bash
+cp .env.example .env
+# Задайте SECRET_KEY и ALLOWED_HOSTS (домен или IP сервера)
+docker compose up --build -d
+```
+
+Сайт: `http://<IP сервера>:8000/bboard/`
+
+PostgreSQL поднимается в контейнере `db`; для приложения в compose задаётся `DB_HOST=db`.
+
+### Переменные окружения
+
+| Переменная | Назначение |
+|------------|------------|
+| `SECRET_KEY` | Секрет Django (обязательно сменить в production) |
+| `DEBUG` | `False` на сервере |
+| `ALLOWED_HOSTS` | Список доменов/IP через запятую |
+| `DB_*` | Подключение к PostgreSQL |
+| `LOAD_INITIAL_DATA` | `true` — рубрики при старте; `false` — только миграции |
+| `WEB_PORT` | Порт на хосте (по умолчанию 8000) |
+
+### Без Docker (VPS, systemd)
+
+Тот же сценарий можно вызвать вручную или в `ExecStartPre`:
+
+```bash
+./entrypoint.sh gunicorn samplesite.wsgi:application --bind 0.0.0.0:8000
+```
+
+На сервере укажите в `.env` реальный `DB_HOST` (не `db`, если БД установлена отдельно).
+
+## Развёртывание на Render
+
+Файл `render.yaml` описывает Blueprint: PostgreSQL + web-сервис с автосборкой и миграциями при каждом деплое.
+
+### Что происходит при деплое
+
+| Этап | Команда |
+|------|---------|
+| Build | `build.sh` — зависимости и `collectstatic` |
+| Pre-deploy | `migrate` и `create_initial_data` (рубрики) |
+| Start | Gunicorn на порту `$PORT` |
+
+Render сам проставляет `DATABASE_URL`, `RENDER_EXTERNAL_HOSTNAME` и сгенерированный `SECRET_KEY`.
+
+### Подключение репозитория
+
+1. Залейте проект на GitHub (корень репозитория — папка `BillBoard`, где лежит `manage.py`).
+2. В [Render Dashboard](https://dashboard.render.com/) → **New** → **Blueprint**.
+3. Подключите репозиторий — Render подхватит `render.yaml`.
+4. Дождитесь деплоя. Сайт: `https://<имя-сервиса>.onrender.com/bboard/`.
+
+Если репозиторий — монорепозиторий и код в подпапке `BillBoard`, в настройках web-сервиса укажите **Root Directory**: `BillBoard`.
+
+### После первого деплоя
+
+- Админка: `https://<ваш-домен>.onrender.com/admin/`
+- Создайте суперпользователя через **Shell** в Render:  
+  `python manage.py createsuperuser`  
+  (команда `create_initial_data` при первом деплое создаёт только тестового `admin` / `admin123`, если в БД ещё нет пользователей.)
+
+### Медиафайлы
+
+На Render диск эфемерный: загруженные через сайт файлы в `/media` не сохраняются между перезапусками. Для production-публикаций с картинками нужен внешний storage (S3 и т.п.).
 
 ## Структура проекта
 
@@ -102,6 +192,11 @@ samplesite/
 │   ├── settings.py      # Конфигурация Django
 │   └── urls.py          # Главный URLconf
 ├── manage.py            # Утилита управления Django
+├── Dockerfile           # Образ приложения
+├── docker-compose.yml   # PostgreSQL + web с автомиграциями
+├── entrypoint.sh        # migrate и старт Gunicorn
+├── render.yaml          # Blueprint для Render.com
+├── build.sh             # Сборка на Render
 └── README.md            # Документация проекта
 ```
 

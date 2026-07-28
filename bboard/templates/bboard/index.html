@@ -81,7 +81,7 @@
         {% if user.is_authenticated %}
             <a href="{% url 'bboard:add_bb' %}" class="btn btn-primary">➕ Добавить объявление</a>
         {% else %}
-            <a href="{% url 'admin:login' %}" class="btn btn-primary">🔑 Войти для добавления</a>
+            <a href="{% url 'login' %}" class="btn btn-primary">🔑 Войти для добавления</a>
         {% endif %}
     </div>
 {% endif %}

@@ -9,6 +9,9 @@ services:
     name: billboard
     runtime: python
     plan: free
+    branch: main
+    autoDeploy: true
+    healthCheckPath: /bboard/
     buildCommand: "bash build.sh"
     startCommand: "bash start.sh"
     envVars:

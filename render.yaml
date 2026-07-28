@@ -9,9 +9,8 @@ services:
     name: billboard
     runtime: python
     plan: free
-    buildCommand: "./build.sh"
-    preDeployCommand: "python manage.py migrate --noinput && python manage.py create_initial_data"
-    startCommand: "gunicorn samplesite.wsgi:application --bind 0.0.0.0:$PORT"
+    buildCommand: "bash build.sh"
+    startCommand: "bash start.sh"
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.7"
@@ -23,5 +22,3 @@ services:
         generateValue: true
       - key: DEBUG
         value: "False"
-      - key: WEB_CONCURRENCY
-        value: "2"

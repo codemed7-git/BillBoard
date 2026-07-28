@@ -1,10 +1,24 @@
+from django.contrib.auth.views import LoginView
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.urls import reverse_lazy
 
 from .models import Bb, Rubric
 from .forms import BbForm
+
+
+class SiteLoginView(LoginView):
+    template_name = 'registration/login.html'
+
+    def get_success_url(self):
+        redirect_to = self.get_redirect_url()
+        if redirect_to:
+            return redirect_to
+        if self.request.user.is_staff:
+            return reverse_lazy('admin:index')
+        return reverse_lazy('bboard:index')
 
 
 def get_rubrics():

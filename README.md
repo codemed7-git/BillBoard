@@ -172,7 +172,7 @@ Render сам проставляет `DATABASE_URL`, `RENDER_EXTERNAL_HOSTNAME` 
 - Админка: `https://<ваш-домен>.onrender.com/admin/`
 - Создайте суперпользователя через **Shell** в Render:  
   `python manage.py createsuperuser`  
-  (команда `create_initial_data` при первом деплое создаёт только тестового `admin` / `admin123`, если в БД ещё нет пользователей.)
+  Либо используйте учётки из `create_initial_data`: **admin** / **admin123** (админка и сайт), **user** / **27kafthebest** (сайт). Пароли обновляются при каждом запуске `start.sh` на Render.
 
 ### Медиафайлы
 
